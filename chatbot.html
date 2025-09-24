@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kerala Agri Helper — Flow Chat (Sample)</title>
+<style>
+  :root{
+    --bg1:#e6fff4; --bg2:#e8f2ff;
+    --primary:#137f3f; --accent:#0b6fb0;
+    --card:#ffffffcc; --muted:#6b7280;
+    --glass: rgba(255,255,255,0.65);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:0;
+    font-family:Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+    background: linear-gradient(135deg,var(--bg1),var(--bg2));
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    height:100vh;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* container */
+  .app {
+    width:98%; max-width:880px; height:92vh;
+    border-radius:20px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.65), rgba(250,255,250,0.5));
+    box-shadow: 0 12px 40px rgba(10,20,40,0.12);
+    display:flex; overflow:hidden;
+  }
+
+  /* left - chat */
+  .left {
+    flex:1.05; display:flex; flex-direction:column; min-width:300px;
+    border-right: 1px solid rgba(10,20,40,0.04);
+    position:relative;
+  }
+  .header{
+    padding:18px 20px;
+    display:flex;gap:12px;align-items:center;
+    background: linear-gradient(90deg, rgba(19,127,63,0.95), rgba(11,111,176,0.95));
+    color:#fff;
+  }
+  .header .title{font-weight:700;font-size:16px}
+  .header .sub{font-size:12px;opacity:.92}
+  .header .logo{
+    width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.15);
+    display:flex;align-items:center;justify-content:center;font-weight:700;
+    box-shadow: inset 0 -6px 12px rgba(0,0,0,0.06);
+  }
+
+  /* breadcrumb and controls */
+  .navbar{
+    padding:12px 16px; display:flex;align-items:center;gap:8px;
+    background:transparent; border-bottom:1px solid rgba(10,20,40,0.03);
+  }
+  .breadcrumb{
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  }
+  .crumb{
+    background:var(--glass); padding:8px 12px; border-radius:999px;
+    font-size:13px; color:#053; cursor:pointer; border:1px solid rgba(5,100,50,0.06);
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .crumb.inactive{opacity:.45}
+  .controls{margin-left:auto; display:flex; gap:8px; align-items:center}
+  .btn {
+    background:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;
+    box-shadow:0 6px 18px rgba(10,20,40,0.06);font-weight:600;font-size:13px;
+  }
+  .btn-muted{background:#f6f7f9;color:var(--muted);}
+
+  /* chat area */
+  .chat-wrap{flex:1; padding:18px; overflow:auto; display:flex; flex-direction:column; gap:12px;}
+  .message {
+    max-width:78%; padding:12px 14px; border-radius:14px; line-height:1.4;
+    box-shadow:0 6px 18px rgba(10,20,40,0.04);
+  }
+  .bot { background: linear-gradient(180deg,#ffffff,#f6fffa); align-self:flex-start; color:#032; border:1px solid rgba(3,50,20,0.04)}
+  .user { background: linear-gradient(180deg,#e8f2ff,#dff0ff); align-self:flex-end; color:#022f4a; border:1px solid rgba(3,50,120,0.06)}
+  .meta{font-size:12px; color:var(--muted); margin-top:6px}
+
+  /* option cards displayed as message content */
+  .options-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;
+    margin-top:8px;
+  }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,255,250,0.95));
+    border-radius:14px; padding:12px; cursor:pointer; border:1px solid rgba(10,20,40,0.04);
+    display:flex; flex-direction:column; gap:8px; transition: transform .16s ease, box-shadow .16s;
+  }
+  .card:hover{ transform:translateY(-6px); box-shadow:0 18px 40px rgba(10,20,40,0.08); }
+  .card .name{ font-weight:700; font-size:15px }
+  .card .sub{ font-size:13px; color:var(--muted) }
+  .tag{ font-size:11px; color: #fff; padding:4px 8px; border-radius:999px; display:inline-block; margin-top:6px; width:max-content; }
+  .tag.green{ background: linear-gradient(90deg,#1e9e57,#137f3f); }
+  .tag.blue{ background: linear-gradient(90deg,#1593d6,#0b6fb0); }
+  .tag.orange{ background: linear-gradient(90deg,#f59d2b,#f3704b); }
+
+  /* footer input area */
+  .footer{
+    padding:14px; display:flex; gap:8px; align-items:center; border-top:1px solid rgba(10,20,40,0.03);
+    background:linear-gradient(180deg, rgba(255,255,255,0.5), rgba(245,250,245,0.6));
+  }
+  .crumb-path{ font-size:13px; color:var(--muted) }
+  .fab{
+    background:linear-gradient(90deg,var(--primary),var(--accent)); color:#fff; padding:12px 16px; border-radius:12px;
+    border:none; cursor:pointer; font-weight:700; box-shadow:0 10px 30px rgba(11,111,176,0.16);
+  }
+  .back-btn{ background:#fff;border-radius:10px;padding:8px 12px;border:1px solid rgba(10,20,40,0.04); cursor:pointer; }
+
+  /* right panel - info */
+  .right {
+    width:360px; min-width:260px; background: linear-gradient(180deg, rgba(255,255,255,0.92), #ffffff);
+    padding:18px; display:flex; flex-direction:column; gap:12px;
+  }
+  .panel-title{ font-weight:700; color:var(--primary); font-size:14px}
+  .info-block{ background:#fff; padding:12px; border-radius:12px; box-shadow:0 8px 30px rgba(10,20,40,0.04); font-size:14px; color:var(--muted) }
+  .small{ font-size:13px;color:var(--muted) }
+
+  /* responsive tweaks */
+  @media (max-width:900px){
+    .right{ display:none }
+    .app{ max-width:680px }
+  }
+
+  /* little animations */
+  .fade-in { animation:fadeIn .28s ease both; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+  /* path clickable look */
+  .crumb-link{ color:var(--primary); font-weight:700; cursor:pointer; text-decoration:none }
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Kerala Agri Helper">
+  <div class="left" id="left">
+    <div class="header">
+      <div class="logo">KA</div>
+      <div style="display:flex;flex-direction:column;">
+        <div class="title">Kerala Agri Helper</div>
+        <div class="sub">Guided crop-soil-fertilizer reasoning — sample</div>
+      </div>
+    </div>
+
+    <div class="navbar">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div class="controls">
+        <button class="btn btn-muted" id="backControl" title="Go back one step">Back</button>
+        <button class="btn" id="restartBtn" title="Restart flow">Restart</button>
+      </div>
+    </div>
+
+    <div class="chat-wrap" id="chatWrap" aria-live="polite"></div>
+
+    <div class="footer">
+      <div class="crumb-path" id="crumbHint">Flow: <span id="flowHint">Start → Crop</span></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button class="fab" id="startBtn">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="right" aria-hidden="false">
+    <div class="panel-title">Quick Reference (sample)</div>
+    <div class="info-block">
+      <div style="font-weight:700;margin-bottom:8px">Soil types included</div>
+      <div class="small">Laterite · Alluvial · Coastal Sandy · Peaty</div>
+      <hr style="margin:12px 0;border:none;border-top:1px solid rgba(10,20,40,0.04)">
+      <div style="font-weight:700;margin-bottom:8px">Crops included</div>
+      <div class="small">Paddy · Coconut · Banana · Pepper</div>
+      <hr style="margin:12px 0;border:none;border-top:1px solid rgba(10,20,40,0.04)">
+      <div style="font-weight:700;margin-bottom:8px">Fertilizers</div>
+      <div class="small">Urea · Potash · Nitrogen</div>
+    </div>
+
+    <div class="panel-title">How it works</div>
+    <div class="info-block small">
+      1) Choose Crop → 2) Choose Soil → 3) System analyses crop–soil match and suggests alternatives.<br><br>
+      4) Choose Fertilizer to evaluate misuse consequences. Use Back or click breadcrumb path to revert.
+    </div>
+  </div>
+</div>
+
+<script>
+/* --------------------------
+   Sample dataset (4 crops)
+   -------------------------- */
+const DATA = {
+  soils: {
+    "Laterite": {
+      suitable: ["Cashew","Coconut","Pineapple","Tapioca","Banana"],
+      challenges: "Low fertility, acidic nature, poor water-holding capacity. Needs liming and frequent organic matter.",
+      alternatives: ["Banana","Pepper"]
+    },
+    "Alluvial": {
+      suitable: ["Paddy","Banana","Vegetables","Sugarcane"],
+      challenges: "High water table; not ideal for some deep-rooted plantation crops. Good for paddy & vegetables.",
+      alternatives: ["Paddy","Banana"]
+    },
+    "Coastal Sandy": {
+      suitable: ["Cashew","Casuarina","Watermelon","Coconut (with irrigation)"],
+      challenges: "Very poor water retention & nutrient leaching — needs mulching & drip irrigation.",
+      alternatives: ["Cashew","Watermelon"]
+    },
+    "Peaty": {
+      suitable: ["Taro","Fodder grass","Coconut"],
+      challenges: "Excess moisture — prone to root rot for some crops. Good drainage necessary for sensitive crops.",
+      alternatives: ["Coconut","Fodder crops"]
+    }
+  },
+
+  crops: {
+    "Paddy": {
+      regions: "Lowlands, Alluvial plains",
+      soil_pref: ["Alluvial","Laterite"],
+      nutrients: "Requires balanced NPK; high water requirement",
+      common_pests: "Stem borer, Blast",
+      fert_recommend: { "Urea":"recommended_split", "Potash":"balanced" }
+    },
+    "Coconut": {
+      regions: "Coastal and lateritic tracts",
+      soil_pref: ["Laterite","Coastal Sandy","Peaty"],
+      nutrients: "NPK with micronutrients; lime for acidity",
+      common_pests: "Rhinoceros beetle, Leaf-eating caterpillar",
+      fert_recommend: { "Nitrogen":"moderate", "Potash":"recommended" }
+    },
+    "Banana": {
+      regions: "Sundry loam and alluvial",
+      soil_pref: ["Alluvial","Laterite"],
+      nutrients: "High potassium demand",
+      common_pests: "Nematodes, Sigatoka",
+      fert_recommend: { "Potash":"high", "NPK":"balanced" }
+    },
+    "Pepper": {
+      regions: "Shade and plantation areas",
+      soil_pref: ["Laterite","Peaty"],
+      nutrients: "Requires organic matter; sensitive roots",
+      common_pests: "Phytophthora, Pollu beetle",
+      fert_recommend: { "Nitrogen":"small", "Potash":"moderate" }
+    }
+  },
+
+  fertilizers: {
+    "Urea": {
+      type: "Nitrogen source",
+      misuse: {
+        // crop level consequences (only sample)
+        "Paddy": {
+          issue: "Excess leaf growth & weak stems (lodging), reduced grain yield.",
+          advice: "Split Urea into recommended doses and combine with organic manure."
+        },
+        "Pepper": {
+          issue: "Root burn if applied directly; reduces vine health.",
+          advice: "Use organic manure and ammonium sources carefully; avoid direct placement near roots."
+        }
+      }
+    },
+    "Potash": {
+      type: "Potassium source",
+      misuse: {
+        "Banana": {
+          issue: "Excess K alone may cause imbalance; poor bunch quality if incorrectly timed.",
+          advice: "Use balanced NPK and compost; follow crop-stage recommendations."
+        },
+        "Pepper": {
+          issue: "Excess can affect soil salt balance and harm sensitive roots.",
+          advice: "Apply as per recommended dose with organic matter."
+        }
+      }
+    },
+    "Nitrogen": {
+      type: "Nitrogen group (generic)",
+      misuse: {
+        "Coconut": {
+          issue: "Too much nitrogen leads to vegetative growth & fewer nuts; increases pest vulnerability.",
+          advice: "Use balanced NPK and lime; follow periodic leaf testing."
+        }
+      }
+    }
+  }
+};
+
+/* --------------------------
+   UI state and helpers
+   -------------------------- */
+const chatWrap = document.getElementById('chatWrap');
+const breadcrumb = document.getElementById('breadcrumb');
+const flowHint = document.getElementById('flowHint');
+const startBtn = document.getElementById('startBtn');
+const backControl = document.getElementById('backControl');
+const restartBtn = document.getElementById('restartBtn');
+
+let state = {
+  step: 0, // 0=start,1=crop,2=soil,3=analysis,4=fertilizer,5=fert_analysis
+  history: [] // record steps {step, key, label}
+};
+
+const STEPS = ['Start','Crop','Soil','Analysis','Fertilizer','FertilizerAnalysis'];
+
+/* --------------------------
+   Utilities - render helpers
+   -------------------------- */
+function clearChat() { chatWrap.innerHTML = ''; }
+function pushMessage(html, cls='bot', meta=null){
+  const m = document.createElement('div');
+  m.className = `message ${cls} fade-in`;
+  m.innerHTML = html;
+  if(meta) m.innerHTML += `<div class="meta">${meta}</div>`;
+  chatWrap.appendChild(m);
+  chatWrap.scrollTop = chatWrap.scrollHeight;
+}
+function pushOptions(items, onSelect, noteText){
+  // wrap as bot message with options grid (cards)
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message bot fade-in';
+  let html = '';
+  if(noteText) html += `<div style="font-weight:700;margin-bottom:8px">${noteText}</div>`;
+  html += '<div class="options-grid">';
+  items.forEach(it=>{
+    html += `<div class="card" data-key="${encodeURIComponent(it.key||it)}">
+      <div class="name">${it.label||it}</div>
+      ${it.sub?`<div class="sub">${it.sub}</div>`:''}
+      ${it.tag?`<div class="tag ${it.tagCls||'green'}">${it.tag}</div>`:''}
+    </div>`;
+  });
+  html += '</div>';
+  wrapper.innerHTML = html;
+  chatWrap.appendChild(wrapper);
+  chatWrap.scrollTop = chatWrap.scrollHeight;
+
+  // attach click listeners
+  wrapper.querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('click', e=>{
+      const key = decodeURIComponent(card.getAttribute('data-key'));
+      onSelect(key);
+      // subtle card disable
+      wrapper.querySelectorAll('.card').forEach(c=>c.style.opacity=0.45);
+      card.style.opacity = 1;
+    });
+  });
+}
+
+function updateBreadcrumb(){
+  breadcrumb.innerHTML = '';
+  const path = state.history.map(h=>h.label);
+  // always show start crumb
+  const crumbs = ['Start', ...path];
+  crumbs.forEach((c,index)=>{
+    const el = document.createElement('div');
+    el.className = 'crumb' + (index<=state.history.length? '' : ' inactive');
+    el.innerHTML = (index===0? '<strong>Home</strong>' : `<span class="crumb-link">${c}</span>`);
+    // clickable only if index <= history length
+    if(index>0 && index<=state.history.length){
+      el.style.cursor='pointer';
+      el.addEventListener('click', ()=> {
+        // navigate to that step index (index maps to history position)
+        navigateToBreadcrumb(index-1);
+      });
+    }
+    breadcrumb.appendChild(el);
+  });
+
+  // flow hint
+  const hint = state.history.length? state.history.map(h=>h.label).join(' > ') : 'Start → Crop';
+  flowHint.textContent = hint;
+}
+
+/* --------------------------
+   Navigation and state ops
+   -------------------------- */
+
+function resetState(){
+  state = { step:0, history: [] };
+  clearChat();
+  updateBreadcrumb();
+  pushMessage('Namaskaram 🙏 Welcome to Kerala Agri Helper. Press <strong>Start</strong> to begin the guided flow.', 'bot');
+}
+
+function pushHistory(stepIdx, key, label){
+  // trim future if going back then selecting
+  if(state.history.length > stepIdx) state.history = state.history.slice(0, stepIdx);
+  state.history.push({ step: stepIdx, key, label });
+  updateBreadcrumb();
+}
+
+function navigateToBreadcrumb(historyIndex){
+  // historyIndex: 0 => jump to first selection (Crop), etc.
+  // remove history beyond that
+  state.history = state.history.slice(0, historyIndex+1);
+  updateBreadcrumb();
+  // determine which UI to show
+  const target = state.history.length;
+  // target 0 -> show crop selection, 1 -> show soil selection etc.
+  if(target === 0) showCropSelection();
+  else if(target === 1) showSoilSelection(state.history[0]);
+  else if(target === 2) showAnalysis(state.history[0], state.history[1]);
+  else if(target === 3) showFertilizerSelection(state.history[0], state.history[1]);
+  else showCropSelection();
+}
+
+/* --------------------------
+   Flow steps
+   -------------------------- */
+
+function showCropSelection(){
+  state.step = 1;
+  pushMessage('Please select the <strong>crop</strong> you want to evaluate:', 'bot');
+  const cropKeys = Object.keys(DATA.crops);
+  const items = cropKeys.map(k=>({
+    key:k, label:k, sub: DATA.crops[k].regions, tag: 'Crop', tagCls:'green'
+  }));
+  pushOptions(items, (selected)=>{
+    pushMessage(selected, 'user');
+    pushHistory(1, selected, selected);
+    // next: soil selection
+    setTimeout(()=> showSoilSelection({key:selected, label:selected}), 350);
+  }, 'Pick a crop');
+}
+
+function showSoilSelection(cropObj){
+  state.step = 2;
+  pushMessage(`Selected crop: <strong>${cropObj.label}</strong>. Now pick the <strong>soil type</strong> for the land:`, 'bot');
+  const soilKeys = Object.keys(DATA.soils);
+  const items = soilKeys.map(k=>({
+    key:k, label:k, sub: DATA.soils[k].suitable.slice(0,3).join(', '), tag:'Soil', tagCls:'blue'
+  }));
+  pushOptions(items, (selected)=>{
+    pushMessage(selected, 'user');
+    pushHistory(2, selected, selected);
+    setTimeout(()=> showAnalysis(cropObj, {key:selected, label:selected}), 350);
+  }, 'Choose soil');
+}
+
+function showAnalysis(cropObj, soilObj){
+  state.step = 3;
+  // analysis logic: check compatibility
+  const crop = cropObj.key;
+  const soil = soilObj.key;
+  const soilInfo = DATA.soils[soil];
+  const cropInfo = DATA.crops[crop];
+
+  // composition of analysis message
+  let ok = (cropInfo.soil_pref || []).some(s => s.toLowerCase() === soil.toLowerCase())
+        || (soilInfo.suitable || []).some(s => s.toLowerCase() === crop.toLowerCase());
+
+  if(ok){
+    pushMessage(`<strong>Analysis:</strong> ✅ <strong>${crop}</strong> is generally <strong>suitable</strong> for <strong>${soil}</strong> soil.<br>
+      <em>Notes:</em> ${cropInfo.nutrients}<br><br>
+      <strong>Common pests:</strong> ${cropInfo.common_pests}<br>
+      <small class="small">You can proceed to evaluate fertilizers or view alternatives.</small>`, 'bot');
+  } else {
+    pushMessage(`<strong>Analysis:</strong> ⚠️ <strong>${crop}</strong> may face <strong>challenges</strong> on <strong>${soil}</strong> soil.<br>
+      <strong>Challenges:</strong> ${soilInfo.challenges}<br>
+      <strong>Why:</strong> ${cropInfo.nutrients}<br>
+      <strong>Better alternatives for this soil:</strong> ${soilInfo.alternatives.join(', ')}<br>
+      <small class="small">You may choose an alternative crop or continue to check fertilizers.</small>`, 'bot');
+  }
+
+  // show action cards: View Alternatives / Check Fertilizer / Change Soil
+  const actions = [
+    { key:'alternatives', label:'Show Alternatives', sub:'View crops suited for this soil', tag:'Action', tagCls:'orange' },
+    { key:'fertilizer', label:'Check Fertilizer', sub:'Evaluate fertilizer impact for this crop', tag:'Action', tagCls:'green' },
+    { key:'change-soil', label:'Change Soil', sub:'Pick another soil type', tag:'Action', tagCls:'blue' }
+  ];
+  pushOptions(actions, (key)=>{
+    pushMessage(key==='change-soil' ? 'Change Soil' : (key==='fertilizer' ? 'Check Fertilizer' : 'Show Alternatives'), 'user');
+    if(key==='alternatives'){
+      setTimeout(()=> showAlternatives(soilObj), 320);
+    } else if(key==='fertilizer'){
+      // go to fertilizer selection
+      setTimeout(()=> {
+        // push history for analysis as intermediate step
+        // ensure history has crop and soil
+        if(state.history.length < 2){
+          // safety: ensure entries exist
+          pushHistory(1, cropObj.key, cropObj.label);
+          pushHistory(2, soilObj.key, soilObj.label);
+        }
+        showFertilizerSelection(cropObj, soilObj);
+      }, 320);
+    } else if(key==='change-soil'){
+      // remove last soil history then show soil options
+      state.history = state.history.slice(0,1); updateBreadcrumb();
+      setTimeout(()=> showSoilSelection(cropObj), 220);
+    }
+  }, 'Next actions');
+}
+
+/* Alternatives listing */
+function showAlternatives(soilObj){
+  state.step = 3.5;
+  const soil = soilObj.key;
+  const alt = DATA.soils[soil].alternatives || [];
+  pushMessage(`<strong>Recommended alternatives for <em>${soil}</em> soil:</strong> ${alt.join(', ')}`, 'bot');
+  // show card to pick an alternative crop (if want to switch)
+  const items = alt.map(a=>({ key:a, label:a, sub:'Alternative crop', tag:'Crop', tagCls:'green' }));
+  pushOptions(items, (selected)=>{
+    pushMessage(selected, 'user');
+    // user switched crop: update history to replace last crop (index 0)
+    if(state.history.length >= 1){
+      state.history[0] = { step:1, key:selected, label:selected };
+    } else {
+      pushHistory(1, selected, selected);
+    }
+    updateBreadcrumb();
+    setTimeout(()=> showSoilSelection({ key:selected, label:selected }), 300);
+  }, 'Choose an alternative to continue');
+}
+
+/* Fertilizer selection */
+function showFertilizerSelection(cropObj, soilObj){
+  state.step = 4;
+  // ensure crop and soil are recorded in history
+  if(state.history.length < 2){
+    if(!state.history[0]) pushHistory(1, cropObj.key, cropObj.label);
+    if(!state.history[1]) pushHistory(2, soilObj.key, soilObj.label);
+  }
+
+  pushMessage(`Select a fertilizer to evaluate for <strong>${cropObj.label}</strong>:`, 'bot');
+  const fertKeys = Object.keys(DATA.fertilizers);
+  const items = fertKeys.map(k=>({ key:k, label:k, sub: DATA.fertilizers[k].type, tag:'Fert', tagCls:'orange' }));
+  pushOptions(items, (selected)=>{
+    pushMessage(selected, 'user');
+    pushHistory(3, selected, selected);
+    setTimeout(()=> showFertilizerAnalysis(cropObj, soilObj, selected), 320);
+  }, 'Fertilizers');
+}
+
+/* Fertilizer analysis */
+function showFertilizerAnalysis(cropObj, soilObj, fertilizer){
+  state.step = 5;
+  const crop = cropObj.key;
+  const soil = soilObj.key;
+  const fertInfo = DATA.fertilizers[fertilizer];
+  let message = `<strong>Fertilizer Analysis</strong>: <br>
+    <strong>Crop:</strong> ${crop} <br>
+    <strong>Soil:</strong> ${soil} <br>
+    <strong>Fertilizer:</strong> ${fertilizer} — ${fertInfo.type}<br><br>`;
+
+  const misuse = (fertInfo.misuse && fertInfo.misuse[crop]) ? fertInfo.misuse[crop] : null;
+  if(misuse){
+    message += `⚠️ <strong>Risk if misused:</strong> ${misuse.issue} <br><br>
+      ✅ <strong>Recommendation:</strong> ${misuse.advice}`;
+  } else {
+    // if no direct misuse entry, check general recommend map
+    const recommended = DATA.crops[crop].fert_recommend && DATA.crops[crop].fert_recommend[fertilizer];
+    if(recommended){
+      message += `✅ <strong>${fertilizer}</strong> is applicable for ${crop} (${recommended}). Follow dose & stage-specific guidance.`;
+    } else {
+      message += `ℹ️ No specific misuse data found for ${fertilizer} on ${crop}. Consult local officer for leaf/soil test.`;
+    }
+  }
+  pushMessage(message, 'bot');
+
+  // final actions: change fertilizer, change crop or finish
+  const actions = [
+    { key:'change-fert', label:'Change Fertilizer', sub:'Pick another fertilizer', tag:'Action', tagCls:'blue' },
+    { key:'change-crop', label:'Change Crop', sub:'Start with a different crop', tag:'Action', tagCls:'green' },
+    { key:'contact', label:'Contact Officer', sub:'Escalate for lab test / forms', tag:'Action', tagCls:'orange' }
+  ];
+  pushOptions(actions, (key)=>{
+    pushMessage(key==='change-fert'? 'Change Fertilizer' : (key==='change-crop' ? 'Change Crop' : 'Contact Officer'), 'user');
+    if(key==='change-fert'){
+      // remove fert history and show fertilizer selection
+      state.history = state.history.slice(0,2); updateBreadcrumb();
+      setTimeout(()=> showFertilizerSelection(cropObj, soilObj), 240);
+    } else if(key==='change-crop'){
+      // restart to crop selection
+      state.history = []; updateBreadcrumb();
+      setTimeout(()=> showCropSelection(), 240);
+    } else {
+      // Contact Officer stub
+      pushMessage(`Officer contact: District Agricultural Office — Ph: +91-XXXX-XXXX. You can also request a soil test sample collection.`, 'bot');
+    }
+  }, 'More actions');
+}
+
+/* --------------------------
+   Controls and wiring
+   -------------------------- */
+startBtn.addEventListener('click', ()=>{
+  // if starting fresh, clear and begin
+  clearChat();
+  pushHistory(0,'Start','Start');
+  updateBreadcrumb();
+  showCropSelection();
+});
+
+backControl.addEventListener('click', ()=>{
+  // go back one step
+  if(state.history.length === 0){
+    resetState();
+    return;
+  }
+  // remove last selection
+  state.history.pop();
+  updateBreadcrumb();
+  // route based on current history length
+  if(state.history.length === 0) showCropSelection();
+  else if(state.history.length === 1) showSoilSelection(state.history[0]);
+  else if(state.history.length === 2) showAnalysis(state.history[0], state.history[1]);
+  else showCropSelection();
+});
+
+restartBtn.addEventListener('click', ()=>{
+  resetState();
+});
+
+/* initialize */
+resetState();
+</script>
+</body>
+</html>
