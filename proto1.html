@@ -23,7 +23,7 @@
     .launcher { position:fixed; right:20px; bottom:20px; z-index:1400; }
     .bubble { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, var(--accent-1), var(--accent-2)); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 30px rgba(0,0,0,0.15); cursor:pointer; color:white; transition: transform .2s ease-in-out; }
     .bubble:hover{ transform: scale(1.1); }
-    .chat-window { position:fixed; right:20px; bottom:96px; max-width:900px; min-width:380px; height:80vh; z-index:1400; border-radius:18px; background: #f9fafb; box-shadow: 0 20px 60px -10px rgba(0,0,0,0.15); overflow:hidden; display:flex; flex-direction:column; transform-origin: right bottom; border:1px solid #e5e7eb; }
+    .chat-window { position:fixed; right:20px; bottom:96px; min-width:300px; height:80vh; z-index:1400; border-radius:18px; background: #f9fafb; box-shadow: 0 20px 60px -10px rgba(0,0,0,0.15); overflow:hidden; display:flex; flex-direction:column; transform-origin: right bottom; border:1px solid #e5e7eb; }
     .chat-hidden { display:none; }
     .cw-header { display:flex; align-items:center; gap:14px; padding:12px 20px; background:var(--bot-bg); border-bottom: 1px solid #e5e7eb;}
     .logo { width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg, var(--accent-1), var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700; color: white; font-size: 13px; }
@@ -328,4 +328,5 @@ document.addEventListener('keydown', e=>{if(e.key==='Escape')closeChatWindow();}
 resetFlow(true);
 </script>
 </body>
+
 </html>
