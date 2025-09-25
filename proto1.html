@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kerala Agri Helper — Final Version</title>
+  <style>
+    :root{
+      --bg-1: #f4f7f6;
+      --glass: rgba(255,255,255,0.6);
+      --muted: #52525b;
+      --accent-1: #14b8a6; /* teal-500 */
+      --accent-2: #4f46e5; /* indigo-600 */
+      --accent-dark: #0f766e; /* teal-700 */
+      --user-bg: #3b82f6; /* blue-500 */
+      --user-text: #ffffff;
+      --bot-bg: #ffffff;
+      --bot-text: #0f172a; /* slate-900 for high contrast */
+      --card-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      --radius: 12px;
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    html,body{height:100%;margin:0;font-family:var(--font);background:var(--bg-1);-webkit-font-smoothing:antialiased}
+    .launcher { position:fixed; right:20px; bottom:20px; z-index:1400; display:flex; align-items:center; gap:12px; }
+    .launcher-label { background:var(--glass); backdrop-filter: blur(8px); padding:10px 16px; border-radius:var(--radius); display:none; box-shadow:var(--card-shadow); align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.5); }
+    .launcher:hover .launcher-label { display:flex; }
+    .bubble { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, var(--accent-1), var(--accent-2)); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 30px rgba(0,0,0,0.15); cursor:pointer; color:white; transform-origin: right bottom; transition: transform .2s ease-in-out; }
+    .bubble:hover{ transform: scale(1.1); }
+    .chat-window { position:fixed; right:20px; bottom:96px; width:60vw; max-width:900px; min-width:380px; height:80vh; z-index:1400; border-radius:18px; background: #f9fafb; box-shadow: 0 20px 60px -10px rgba(0,0,0,0.15); overflow:hidden; display:flex; flex-direction:column; transform-origin: right bottom; border:1px solid #e5e7eb; }
+    .chat-hidden { display:none; }
+    .cw-header { display:flex; align-items:center; gap:14px; padding:12px 20px; background:var(--bot-bg); color: var(--bot-text); border-bottom: 1px solid #e5e7eb;}
+    .logo { width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg, var(--accent-1), var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700; color: white; font-size: 18px; }
+    .title { font-weight:700; font-size:18px; }
+    .subtitle { font-size:13px; opacity:.7; }
+    .cw-actions { margin-left:auto; display:flex; gap:8px; align-items:center }
+    .lang-pill { padding:6px 12px; border-radius:999px; background: #f3f4f6; color:var(--muted); cursor:pointer; font-weight:600; border:1px solid transparent; transition: all .2s ease; }
+    .lang-pill.active { background:var(--accent-1); color:white; font-weight: 700; border-color: var(--accent-dark); }
+    .small-btn{ background: #f3f4f6; color:var(--muted); border: 1px solid #e5e7eb; width: 32px; height: 32px; border-radius:50%; cursor:pointer; font-weight:700; display:flex; align-items:center; justify-content:center; }
+    .breadcrumb { display:flex; gap:8px; padding:12px 20px; align-items:center; background: #f3f4f6; border-bottom:1px solid #e5e7eb; }
+    .crumb { background:white; padding:7px 12px; border-radius:999px; font-weight:600; color:var(--muted); cursor:pointer; border: 1px solid #e5e7eb;}
+    .crumb.active { color:var(--accent-2); font-weight: 700; }
+    .chat-body { flex:1; padding:24px; overflow:auto; display:flex; flex-direction:column; gap:20px; }
+    .msg { max-width:78%; padding:14px 18px; border-radius:var(--radius); line-height:1.6; animation:fadeIn .2s ease both; font-size: 15px; }
+    .msg.bot { align-self:flex-start; background:var(--bot-bg); color:var(--bot-text); border:1px solid #e5e7eb; border-left: 4px solid var(--accent-1); box-shadow: var(--card-shadow); }
+    .msg.user { align-self:flex-end; background:var(--user-bg); color:var(--user-text); font-weight: 500; }
+    .meta { font-size: 14px; color: var(--bot-text); opacity: 0.9; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6; line-height: 1.6; }
+    .meta b { font-weight: 600; color: #020617; }
+    .msg.bot b { font-weight: 700; color: #020617; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
+    .options-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-top:12px }
+    .card { background:var(--bot-bg); border-radius:10px; padding:12px; cursor:pointer; border:1px solid #e5e7eb; display:flex; flex-direction:column; gap:4px; transition: all .2s ease; }
+    .card:hover { transform:translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: var(--accent-1); }
+    .card .title { font-weight:700; color:var(--accent-dark); font-size: 16px; }
+    .card .sub { font-size:14px; color:var(--muted); }
+    .chat-footer { padding:12px 20px; border-top:1px solid #e5e7eb; display:flex; gap:12px; align-items:center; background: #f9fafb; }
+    .input-wrap { flex:1; display:flex; gap:8px; align-items:center; background:var(--bot-bg); padding:4px 4px 4px 16px; border-radius:999px; border: 1px solid #d1d5db; }
+    .input-wrap:focus-within { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    .input-wrap input { flex:1; border:none; outline:none; background:transparent; padding:8px; font-size:15px }
+    .send-btn { background:var(--accent-2); color:white; border:none; width: 44px; height: 44px; border-radius:50%; cursor:pointer; font-weight:800; display:flex; align-items:center; justify-content:center; transition: background-color .2s; }
+    .send-btn:hover { background: #4338ca; }
+    .action-btn { background:white; width: 44px; height: 44px; border-radius:50%; border:1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+    .suggestions { position:absolute; left:0; right:0; bottom:64px; background:white; border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,0.12); max-height:220px; overflow:auto; z-index:1600; border:1px solid #e5e7eb; }
+    .suggestion-item { padding:10px 16px; cursor:pointer; border-bottom:1px solid #f3f4f6; font-weight: 500; }
+    .suggestion-item:last-child{ border-bottom:none }
+    .suggestion-item:hover { background: #f9fafb; color: var(--accent-2); }
+    .note { font-size:13px; color:var(--muted); padding-top: 4px; }
+    .chips { display:flex; gap:8px; flex-wrap:wrap }
+    .chip { padding:8px 14px; background:var(--bot-bg); border: 1px solid #e5e7eb; border-radius:999px; font-weight:600; cursor:pointer; color:var(--muted); transition: all .2s ease; }
+    .chip:hover { background-color: #f3f4f6; border-color: #d1d5db; color: var(--bot-text); }
+    @media (max-width:900px){ .chat-window{ right:12px; left:12px; width:calc(100% - 24px); bottom:90px; height: 85vh; } .launcher-label{ display:none } }
+  </style>
+</head>
+<body>
+
+  <div class="launcher" id="launcher"><div class="launcher-label" title="Open Kerala Agri Helper"><div style="font-weight:900;color:#0f172a">Kerala Agri Helper</div></div><div class="bubble" id="openChat" title="Open chat"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3C7 3 3 6 3 10.25c0 1.92.9 3.7 2.47 5.06L6 20l4.07-1.95c.94.2 1.92.29 2.93.29 5 0 9-3 9-7.25S17 3 12 3z" fill="white"/></svg></div></div>
+  <div class="chat-window chat-hidden" id="chatWindow" role="dialog" aria-label="Kerala Agri Helper Chat">
+    <div class="cw-header">
+      <div class="logo">KA</div><div><div class="title">Kerala Agri Helper</div><div class="subtitle">Your AI farming assistant</div></div>
+      <div class="cw-actions"><div class="lang-pill active" data-lang="en">EN</div><div class="lang-pill" data-lang="ml">മലയാളം</div><div class="lang-pill" data-lang="ta">தமிழ்</div><button class="small-btn" id="closeBtn" title="Close">✕</button></div>
+    </div>
+    <div class="breadcrumb" id="breadcrumb"></div><div class="chat-body" id="chatBody" aria-live="polite"></div>
+    <div class="chat-footer">
+      <button class="action-btn" id="restartBtn" title="Restart">🔄</button>
+      <div class="input-wrap autocomplete"><input id="inputBox" placeholder="Ask about crops, soil, weather..." autocomplete="off" /><div class="suggestions" id="suggestions" style="display:none"></div></div>
+      <button class="send-btn" id="sendBtn" title="Send"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+    </div>
+  </div>
+
+<script>
+/* ============================ CONFIG ============================ */
+const OPENWEATHER_API_KEY = "REPLACE_WITH_OPENWEATHER_API_KEY";
+
+/* ============================ I18N - UI STRINGS (NOW COMPLETE) ============================ */
+const I18N = {
+  en: {
+    welcome: "Namaskaram 🙏 Welcome to your Agri Helper!", startPrompt: "How can I help you today?", use_location: "📍 Use my current location", enter_location: "📝 Enter city/village name", weather_fetching: "🔍 Fetching weather…", weather_error: "Couldn't fetch weather. Please check the location.", unknown: "Sorry, I can't help with that yet. Please choose an option.", suggestions_label: "💡 Or try these quick questions:", main_features_label: "👇 Choose a category to begin:", next_steps_label: "➡️ What's next?", home: "Home", input_placeholder: "Ask about crops, soil, weather...",
+    select_crop_prompt: "Let's talk about crops. Which one would you like to evaluate?",
+    select_soil_prompt: "Got it. Now, what type of soil are we checking for {crop}?",
+    market_trends_prompt: "Let's look at the market. Select a crop to see its seasonal trends.",
+    schemes_prompt: "Here are some popular government schemes. Select one to learn more.",
+    disease_prompt: "Let's identify a pest or disease. Choose a common issue from the list.",
+    select_soil_details_prompt: "Let's explore soil types. Which one would you like details on?",
+    enter_city_prompt: "Please type your city or village name and press send.",
+    suitability_ok: "{crop} is generally suitable for {soil} soil.", suitability_bad: "⚠️ {crop} may face challenges in {soil} soil.", notes_label: "Notes", pests_label: "Common Pests", challenges_label: "Challenges", alternatives_label: "Alternatives",
+    weather_suggestion_hot: "🥵 High temperature — consider extra irrigation and mulching.", weather_suggestion_cool: "🥶 Cool conditions — protect sensitive young crops.", weather_suggestion_rain: "🌧️ Rain is likely — postpone pesticide or fertilizer sprays.", weather_suggestion_normal: "✅ Normal conditions. Good for general farm activities.",
+    quick_chips: ['Paddy pests', 'Weather in Thrissur', 'Coconut market price', 'PM-KISAN scheme'],
+    suggest_after_weather_title: "Suitable crops for this weather", suggest_after_irrigation_title: "Irrigation Advice", suggest_after_market_title: "See Market Trends",
+    suggest_after_scheme_apply_title: "How to apply for subsidy", suggest_after_scheme_office_title: "Find nearest Agri Office",
+    suggest_after_market_forecast_title: "Next season forecast", suggest_after_market_sell_title: "Best time to sell",
+    suggest_after_disease_fert_title: "Recommended fertilizers", suggest_after_disease_irrigation_title: "Irrigation for recovery",
+    response_scheme_apply: "✅ To apply for most schemes, visit your nearest Krishi Bhavan with your land tax receipts, Aadhaar card, and bank passbook. Officers there will guide you.",
+    response_scheme_office: "🏢 You can find your nearest Krishi Bhavan by searching online or visiting the Kerala Agriculture Department website. The general helpline is 1800-425-1661.",
+    response_market_forecast: "📈 While precise forecasting is difficult, prices for seasonal crops typically improve after the monsoon period (Oct-Nov) due to festival demand.",
+    response_market_sell: "💡 The best time to sell is often during major festival seasons like Onam and Vishu when demand is high. Avoid selling immediately at harvest time when supply is high.",
+    response_disease_irrigation: "💧 For plants recovering from fungal diseases, ensure good drainage and avoid over-watering. For pest attacks, ensure the plant is not water-stressed."
+  },
+  ml: {
+    welcome: "നമസ്കാരം 🙏 അഗ്രി ഹെൽപ്പറിലേക്ക് സ്വാഗതം!", startPrompt: "ഞാൻ നിങ്ങളെ എങ്ങനെ സഹായിക്കണം?", use_location: "📍 എന്റെ സ്ഥലം ഉപയോഗിക്കുക", enter_location: "📝 നഗരം/ഗ്രാമം നൽകുക", weather_fetching: "🔍 കാലാവസ്ഥ നേടുന്നു…", weather_error: "കാലാവസ്ഥ കണ്ടെത്താനായില്ല. സ്ഥലം പരിശോധിക്കുക.", unknown: "ക്ഷമിക്കണം, അതിന് മറുപടിയില്ല. ഒരു ഓപ്ഷൻ തിരഞ്ഞെടുക്കുക.", suggestions_label: "💡 അല്ലെങ്കിൽ ഇവ ശ്രമിക്കുക:", main_features_label: "👇 ആരംഭിക്കാൻ ഒരു വിഭാഗം തിരഞ്ഞെടുക്കുക:", next_steps_label: "➡️ അടുത്തത് എന്ത്?", home: "ഹോം", input_placeholder: "വിള, മണ്ണ്, കാലാവസ്ഥ...",
+    select_crop_prompt: "വിളകളെക്കുറിച്ച് സംസാരിക്കാം. ഏതാണ് നിങ്ങൾ വിലയിരുത്താൻ ആഗ്രഹിക്കുന്നത്?",
+    select_soil_prompt: "ശരി. ഇപ്പോൾ, {crop}-നായി ഏത് തരം മണ്ണാണ് പരിശോധിക്കുന്നത്?",
+    market_trends_prompt: "വിപണി പരിശോധിക്കാം. ഒരു വിളയുടെ സീസണൽ ട്രെൻഡുകൾ കാണാൻ തിരഞ്ഞെടുക്കുക.",
+    schemes_prompt: "പ്രധാന സർക്കാർ പദ്ധതികൾ താഴെ നൽകുന്നു. കൂടുതലറിയാൻ ഒന്ന് തിരഞ്ഞെടുക്കുക.",
+    disease_prompt: "ഒരു കീടത്തെയോ രോഗത്തെയോ കണ്ടെത്താം. പട്ടികയിൽ നിന്ന് ഒരു പൊതുവായ പ്രശ്നം തിരഞ്ഞെടുക്കുക.",
+    select_soil_details_prompt: "മണ്ണിന്റെ തരങ്ങൾ പരിശോധിക്കാം. ഏതിനെക്കുറിച്ചാണ് നിങ്ങൾക്ക് വിവരങ്ങൾ വേണ്ടത്?",
+    enter_city_prompt: "ദയവായി നിങ്ങളുടെ നഗരത്തിന്റെയോ ഗ്രാമത്തിന്റെയോ പേര് ടൈപ്പ് ചെയ്ത് അയയ്ക്കുക.",
+    suitability_ok: "{crop}, {soil} മണ്ണിന് പൊതുവെ അനുയോജ്യമാണ്.", suitability_bad: "⚠️ {crop}, {soil} മണ്ണിൽ വെല്ലുവിളികൾ നേരിടാം.", notes_label: "കുറിപ്പുകൾ", pests_label: "സാധാരണ കീടങ്ങൾ", challenges_label: "വെല്ലുവിളികൾ", alternatives_label: "ബദൽ വിളകൾ",
+    weather_suggestion_hot: "🥵 ഉയർന്ന താപനില — അധിക ജലസേചനവും പുതയിടലും പരിഗണിക്കുക.", weather_suggestion_cool: "🥶 തണുത്ത കാലാവസ്ഥ — ഇളം വിളകളെ സംരക്ഷിക്കുക.", weather_suggestion_rain: "🌧️ മഴ സാധ്യതയുണ്ട് — കീടനാശിനി പ്രയോഗം മാറ്റിവയ്ക്കുക.", weather_suggestion_normal: "✅ സാധാരണ കാലാവസ്ഥ. കൃഷിപ്പണികൾക്ക് നല്ലതാണ്.",
+    quick_chips: ['നെല്ലിലെ കീടങ്ങൾ', 'തൃശ്ശൂർ കാലാവസ്ഥ', 'തെങ്ങിന്റെ വില', 'പിഎം-കിസാൻ'],
+    suggest_after_weather_title: "ഈ കാലാവസ്ഥയ്ക്ക് അനുയോജ്യമായ വിളകൾ", suggest_after_irrigation_title: "ജലസേചന ഉപദേശം", suggest_after_market_title: "വിപണി நிலவரം കാണുക",
+    suggest_after_scheme_apply_title: "സബ്സിഡിക്ക് എങ്ങനെ അപേക്ഷിക്കാം", suggest_after_scheme_office_title: "അടുത്തുള്ള കൃഷി ഭവൻ",
+    suggest_after_market_forecast_title: "അടുത്ത സീസണിലെ പ്രവചനം", suggest_after_market_sell_title: "വിൽക്കാൻ പറ്റിയ സമയം",
+    suggest_after_disease_fert_title: "ശുപാർശ ചെയ്യുന്ന വളങ്ങൾ", suggest_after_disease_irrigation_title: "രോഗമുക്തിക്ക് ജലസേചനം",
+    response_scheme_apply: "✅ പദ്ധതികൾക്ക് അപേക്ഷിക്കാൻ, കരമടച്ച രസീത്, ആധാർ, ബാങ്ക് പാസ്ബുക്ക് എന്നിവയുമായി അടുത്തുള്ള കൃഷിഭവനിൽ ബന്ധപ്പെടുക.",
+    response_scheme_office: "🏢 അടുത്തുള്ള കൃഷിഭവൻ കണ്ടെത്താൻ ഓൺലൈനിൽ തിരയുക. പൊതു ഹെൽപ്പ് ലൈൻ: 1800-425-1661.",
+    response_market_forecast: "📈 കൃത്യമായ പ്രവചനം ബുദ്ധിമുട്ടാണെങ്കിലും, ഉത്സവ സീസണുകളിൽ (ഒക്ടോബർ-നവംബർ) വിളകൾക്ക് വില കൂടാറുണ്ട്.",
+    response_market_sell: "💡 ഓണം, വിഷു പോലുള്ള ഉത്സവകാലങ്ങളിൽ தேவை കൂടുമ്പോൾ വിൽക്കുന്നതാണ് നല്ലത്.",
+    response_disease_irrigation: "💧 കുമിൾ രോഗത്തിൽ നിന്ന് ചെടി സുഖം പ്രാപിക്കുമ്പോൾ, നല്ല നീർവാർച്ച ഉറപ്പാക്കുകയും അമിതമായി നനയ്ക്കുന്നത് ഒഴിവാക്കുകയും ചെയ്യുക."
+  },
+  ta: {
+    welcome: "வணக்கம் 🙏 வேளாண் സഹായിக்கு வரவேற்கிறோம்!", startPrompt: "இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?", use_location: "📍 என் இருப்பிடத்தைப் பயன்படுத்து", enter_location: "📝 நகரம்/கிராமம் பெயரை உள்ளிடவும்", weather_fetching: "🔍 வானிலை பெறப்படுகிறது…", weather_error: "வானிலையைப் பெற முடியவில்லை. இடத்தை சரிபார்க்கவும்.", unknown: "மன்னிக்கவும், பதில் இல்லை. ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்.", suggestions_label: "💡 அல்லது இவற்றை முயற்சிக்கவும்:", main_features_label: "👇 தொடங்க ஒரு வகையைத் தேர்ந்தெடுக்கவும்:", next_steps_label: "➡️ அடுத்து என்ன?", home: "முகப்பு", input_placeholder: "பயிர்கள், மண், வானிலை...",
+    select_crop_prompt: "பயிர்களைப் பற்றி பேசலாம். நீங்கள் எதை மதிப்பீடு செய்ய விரும்புகிறீர்கள்?",
+    select_soil_prompt: "புரிந்தது. இப்போது, {crop}க்கு எந்த வகை மண்ணை சோதிக்கிறோம்?",
+    market_trends_prompt: "சந்தையைப் பார்ப்போம். ஒரு பயிரின் பருவகாலப் போக்குகளைக் காண அதைத் தேர்ந்தெடுக்கவும்.",
+    schemes_prompt: "பிரபலமான அரசாங்கத் திட்டங்கள் இங்கே. மேலும் அறிய ஒன்றைத் தேர்ந்தெடுக்கவும்.",
+    disease_prompt: "ஒரு பூச்சி அல்லது நோயைக் கண்டறிவோம். பட்டியலிலிருந்து ஒரு பொதுவான சிக்கலைத் தேர்ந்தெடுக்கவும்.",
+    select_soil_details_prompt: "மண் வகைகளை ஆராய்வோம். எதைப் பற்றிய விவரங்கள் உங்களுக்கு வேண்டும்?",
+    enter_city_prompt: "தயவுசெய்து உங்கள் நகரம் அல்லது கிராமத்தின் பெயரைத் தட்டச்சு செய்து அனுப்பவும்.",
+    suitability_ok: "{crop} பயிர் {soil} மண்ணுக்கு பொதுவாக பொருத்தமானது.", suitability_bad: "⚠️ {crop} பயிர் {soil} மண்ணில் சவால்களை சந்திக்க நேரிடலாம்.", notes_label: "குறிப்புகள்", pests_label: "பொதுவான பூச்சிகள்", challenges_label: "சவால்கள்", alternatives_label: "மாற்று பயிர்கள்",
+    weather_suggestion_hot: "🥵 அதிக வெப்பநிலை — கூடுதல் நீர்ப்பாசனம் மற்றும் தழைக்கூளம் பற்றி பரிசீலிக்கவும்.", weather_suggestion_cool: "🥶 குளிர்ந்த சூழல் — இளம் பயிர்களைப் பாதுகாக்கவும்.", weather_suggestion_rain: "🌧️ மழை பெய்ய வாய்ப்புள்ளது — பூச்சிக்கொல்லி தெளிப்பதை ஒத்திவைக்கவும்.", weather_suggestion_normal: "✅ சாதாரண நிலைமைகள். விவசாயத்திற்கு நல்லது.",
+    quick_chips: ['நெல் பூச்சிகள்', 'திருச்சூர் வானிலை', 'தேங்காய் விலை', 'பிஎம்-கிசான் திட்டம்'],
+    suggest_after_weather_title: "இந்த வானிலைக்கு ஏற்ற பயிர்கள்", suggest_after_irrigation_title: "நீர்ப்பாசன ஆலோசனை", suggest_after_market_title: "சந்தை நிலவரங்களைக் காண்க",
+    suggest_after_scheme_apply_title: "மானியத்திற்கு விண்ணப்பிப்பது எப்படி", suggest_after_scheme_office_title: "அருகிலுள்ள வேளாண் அலுவலகம்",
+    suggest_after_market_forecast_title: "அடுத்த பருவத்திற்கான முன்னறிவிப்பு", suggest_after_market_sell_title: "விற்க சிறந்த நேரம்",
+    suggest_after_disease_fert_title: "பரிந்துரைக்கப்பட்ட உரங்கள்", suggest_after_disease_irrigation_title: "மீட்புக்கு நீர்ப்பாசனம்",
+    response_scheme_apply: "✅ திட்டங்களுக்கு விண்ணப்பிக்க, உங்கள் நில வரி ரசீதுகள், ஆதார் அட்டை மற்றும் வங்கி பாஸ்புக் ஆகியவற்றுடன் அருகிலுள்ள கிருஷி பவனைப் பார்வையிடவும்.",
+    response_scheme_office: "🏢 ஆன்லைனில் தேடுவதன் மூலம் உங்கள் அருகிலுள்ள கிருஷி பவனைக் காணலாம். பொது உதவி எண்: 1800-425-1661.",
+    response_market_forecast: "📈 துல்லியமான முன்னறிவிப்பு கடினம் என்றாலும், பண்டிகை காலங்களில் (அக்டோபர்-நவம்பர்) பருவகால பயிர்களுக்கான விலைகள் பொதுவாக மேம்படும்.",
+    response_market_sell: "💡 ஓணம் மற்றும் விஷு போன்ற முக்கிய பண்டிகை காலங்களில் தேவை அதிகமாக இருக்கும்போது விற்பனை செய்வதே சிறந்த நேரம்.",
+    response_disease_irrigation: "💧 பூஞ்சை நோய்களிலிருந்து மீண்டு வரும் தாவரங்களுக்கு, நல்ல வடிகால் வசதியை உறுதிசெய்து, அதிகப்படியான நீர்ப்பாசனத்தைத் தவிர்க்கவும்."
+  }
+};
+
+/* ============================ TRANSLATED CORE DATA ============================ */
+const DATA = {
+    en: {
+        features: [{k:"crop",t:"🌱 Crop Guidance",s:"Details, suitability"},{k:"soil",t:"🏞️ Soil Advice",s:"Types & compatibilities"},{k:"weather",t:"🌦️ Weather Info",s:"Live local weather"},{k:"market",t:"📈 Market Trends",s:"Seasonal demand"},{k:"schemes",t:"📜 Govt Schemes",s:"For Kerala farmers"},{k:"disease",t:"🐛 Pest & Disease",s:"Symptoms & remedies"}],
+        crops: {"Paddy":{nutrients:"Requires balanced NPK & high water.",pests:"Stem borer, Blast"},"Coconut":{nutrients:"Needs NPK + micronutrients.",pests:"Rhinoceros beetle, Mites"},"Banana":{nutrients:"High potassium demand.",pests:"Nematodes, Sigatoka"}},
+        soils: {"Laterite":{suitable:["Cashew","Coconut"],"challenges":"Low fertility, acidic.","alternatives":"Banana, Pepper"},"Alluvial":{suitable:["Paddy","Banana"],"challenges":"High water table.","alternatives":"Sugarcane, Vegetables"},"Coastal Sandy":{suitable:["Cashew","Coconut"],"challenges":"Poor water retention.","alternatives":"Groundnut"}},
+        schemes: [{"title":"PM-KISAN","desc":"Direct income support of ₹6000/year to small farmers."},{"title":"Crop Insurance Support","desc":"Kerala state subsidy on premium for crop insurance."},{"title":"Drip Irrigation Subsidy","desc":"Subsidy for adopting drip irrigation to save water."}],
+        market_trends: {"Paddy":"Prices often peak during Oct-Nov after harvest.","Coconut":"Demand rises around festival seasons like Onam.","Banana":"Steady demand, with peaks for varieties like Nendran."},
+        diseases: {"stem borer":{remedy:"Remove affected parts, use pheromone traps, or apply recommended pesticides."},"blast":{remedy:"Use resistant varieties, ensure proper spacing, and apply fungicides."},"phytophthora":{remedy:"Improve drainage, remove infected plants, apply phosphonate fungicides."}}
+    },
+    ml: {
+        features: [{k:"crop",t:"🌱 വിള മാർഗ്ഗനിർദ്ദേശം",s:"വിശദാംശങ്ങൾ"},{k:"soil",t:"🏞️ മണ്ണ് ഉപദേശം",s:"തരങ്ങൾ, ചേർച്ച"},{k:"weather",t:"🌦️ കാലാവസ്ഥ",s:"തത്സമയ വിവരം"},{k:"market",t:"📈 വിപണി നിലവാരം",s:"സീസണൽ ഡിമാൻഡ്"},{k:"schemes",t:"📜 സർക്കാർ പദ്ധതികൾ",s:"കർഷകർക്ക്"},{k:"disease",t:"🐛 രോഗം & കീടം",s:"പരിഹാരങ്ങൾ"}],
+        crops: {"നെല്ല്":{nutrients:"സന്തുലിതമായ NPK-യും ഉയർന്ന ജലലഭ്യതയും ആവശ്യമാണ്.",pests:"തണ്ടുതുരപ്പൻ, ബ്ലാസ്റ്റ്"},"തെങ്ങ്":{nutrients:"NPK-യും സൂക്ഷ്മ പോഷകങ്ങളും ആവശ്യമാണ്.",pests:"കൊമ്പൻചെല്ലി, മണ്ഡരി"},"വാഴ":{nutrients:"ഉയർന്ന പൊട്ടാസ്യം ആവശ്യമാണ്.",pests:"നിമാവിരകൾ, സിഗാട്ടോക്ക"}},
+        soils: {"ചെങ്കൽ":{suitable:["കശുവണ്ടി","തെങ്ങ്"],"challenges":"വളക്കൂറ് കുറവ്, അമ്ലത്വം.","alternatives":"വാഴ, കുരുമുളക്"},"എക്കൽ":{suitable:["നെല്ല്","വാഴ"],"challenges":"ഉയർന്ന ജലനിരപ്പ്.","alternatives":"കരിമ്പ്, പച്ചക്കറികൾ"},"തീരദേശ മണൽ":{suitable:["കശുവണ്ടി","തെങ്ങ്"],"challenges":"ജലം പിടിച്ചുനിർത്താനുള്ള കഴിവ് കുറവ്.","alternatives":"നിലക്കടല"}},
+        schemes: [{"title":"പിഎം-കിസാൻ","desc":"ചെറുകിട കർഷകർക്ക് വർഷം ₹6000 നേരിട്ട് അക്കൗണ്ടിൽ."},{"title":"വിള ഇൻഷുറൻസ്","desc":"വിള ഇൻഷുറൻസ് പ്രീമിയത്തിൽ കേരള സർക്കാർ നൽകുന്ന സബ്സിഡി."},{"title":"തുള്ളിനന സബ്സിഡി","desc":"ജലം ലാഭിക്കാൻ തുള്ളിനന സ്ഥാപിക്കുന്നതിനുള്ള സബ്സിഡി."}],
+        market_trends: {"നെല്ല്":"വിളവെടുപ്പിന് ശേഷം ഒക്ടോബർ-നവംബർ മാസങ്ങളിൽ വില വർധിക്കാറുണ്ട്.","തെങ്ങ്":"ഓണം പോലുള്ള ആഘോഷകാലങ്ങളിൽ ആവശ്യം വർധിക്കുന്നു.","വാഴ":"സ്ഥിരമായ ഡിമാൻഡ്, നേന്ത്രൻ പോലുള്ള ഇനങ്ങൾക്ക് വില കൂടുതൽ."},
+        diseases: {"തണ്ടുതുരപ്പൻ":{remedy:"രോഗബാധിതമായ ഭാഗങ്ങൾ നീക്കം ചെയ്യുക, ഫിറമോൺ കെണികൾ ഉപയോഗിക്കുക."},"ബ്ലാസ്റ്റ്":{remedy:"പ്രതിരോധശേഷിയുള്ള ഇനങ്ങൾ ഉപയോഗിക്കുക, ശരിയായ അകലം പാലിക്കുക."},"ദ്രുതവാട്ടം":{remedy:"നീർവാർച്ച മെച്ചപ്പെടുത്തുക, രോഗബാധിതമായ ചെടികൾ നശിപ്പിക്കുക."}}
+    },
+    ta: {
+        features: [{k:"crop",t:"🌱 பயிர் வழிகாட்டி",s:"விவரங்கள்"},{k:"soil",t:"🏞️ மண் ஆலோசனை",s:"வகைகள்"},{k:"weather",t:"🌦️ வானிலை",s:"உள்ளூர் தகவல்"},{k:"market",t:"📈 சந்தை நிலவரம்",s:"பருவகால தேவை"},{k:"schemes",t:"📜 அரசு திட்டங்கள்",s:"விவசாயிகளுக்கு"},{k:"disease",t:"🐛 நோய் & பூச்சி",s:"தீர்வுகள்"}],
+        crops: {"நெல்":{nutrients:"சமச்சீர் NPK மற்றும் அதிக நீர் தேவை.",pests:"தண்டு துளைப்பான், குலைநோய்"},"தென்னை":{nutrients:"NPK மற்றும் நுண்ணூட்டச் சத்துக்கள் தேவை.",pests:"காண்டாமிருக வண்டு, சிலந்திகள்"},"வாழை":{nutrients:"அதிக பொட்டாசியம் தேவை.",pests:"நூற்புழுக்கள், சிகடோகா"}},
+        soils: {"செம்மண்":{suitable:["முந்திரி","தென்னை"],"challenges":"குறைந்த வளம், அமிலத்தன்மை.","alternatives":"வாழை, மிளகு"},"வண்டல்":{suitable:["நெல்","வாழை"],"challenges":"உயர்ந்த நிலத்தடி நீர்.","alternatives":"கரும்பு, காய்கறிகள்"},"கடலோர மணல்":{suitable:["முந்திரி","தென்னை"],"challenges":"குறைந்த நீர் தேக்கும் திறன்.","alternatives":"நிலக்கடலை"}},
+        schemes: [{"title":"பிஎம்-கிசான்","desc":"சிறு விவசாயிகளுக்கு ஆண்டுக்கு ₹6000 நேரடி வருமான ஆதரவு."},{"title":"பயிர் காப்பீட்டு ஆதரவு","desc":"பயிர் காப்பீட்டுக்கான பிரீமியத்தில் கேரள அரசின் மானியம்."},{"title":"சொட்டு நீர் பாசன மானியம்","desc":"நீரை சேமிக்க சொட்டு நீர் பாசனத்தை அமைப்பதற்கான மானியம்."}],
+        market_trends: {"நெல்":"அறுவடைக்குப் பிறகு அக்டோபர்-நவம்பர் மாதங்களில் விலை உச்சத்தை அடைகிறது.","தென்னை":"ஓணம் போன்ற பண்டிகை காலங்களில் தேவை அதிகரிக்கிறது.","வாழை":"நிலையான தேவை, நேந்திரன் போன்ற வகைகளுக்கு உச்சம்."},
+        diseases: {"தண்டு துளைப்பான்":{remedy:"பாதிக்கப்பட்ட பகுதிகளை அகற்றவும், இனக்கவர்ச்சிப் பொறிகளைப் பயன்படுத்தவும்."},"குலைநோய்":{remedy:"நோய் எதிர்ப்புத் திறன் கொண்ட ரகங்களைப் பயன்படுத்தவும், சரியான இடைவெளியை உறுதி செய்யவும்."},"பைட்டோப்தோரா":{remedy:"வடிகால் வசதியை மேம்படுத்தவும், பாதிக்கப்பட்ட செடிகளை அகற்றவும்."}}
+    }
+};
+
+/* ============================ State & DOM refs ============================ */
+let LANG = 'en'; let FLOW = [];
+const chatWindow = document.getElementById('chatWindow'), openChat = document.getElementById('openChat'), closeBtn = document.getElementById('closeBtn'), chatBody = document.getElementById('chatBody'), breadcrumb = document.getElementById('breadcrumb'), inputBox = document.getElementById('inputBox'), sendBtn = document.getElementById('sendBtn'), suggestionsBox = document.getElementById('suggestions'), restartBtn = document.getElementById('restartBtn'), langPills = document.querySelectorAll('.lang-pill');
+
+/* ============================ Utilities & Rendering ============================ */
+function _t(key, r={}) { let s=I18N[LANG][key]||I18N.en[key]||`[${key}]`; for(const p in r){s=s.replace(`{${p}}`,r[p]);} return s; }
+function escapeHtml(s) { return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function clearChat() { chatBody.innerHTML=''; }
+function addUser(t) { const d=document.createElement('div');d.className='msg user';d.innerHTML=`<div style="font-weight:500">${escapeHtml(t)}</div>`;chatBody.appendChild(d);chatBody.scrollTop=chatBody.scrollHeight; }
+function addBot(h, m=null) { const d=document.createElement('div');d.className='msg bot';d.innerHTML=h+(m?`<div class="meta">${m}</div>`:'');chatBody.appendChild(d);chatBody.scrollTop=chatBody.scrollHeight; }
+function addOptions(items, onSelect, note=null) {
+  const wrapper=document.createElement('div');wrapper.className='msg bot';
+  let inner=note?`<div style="font-weight:700;margin-bottom:12px;color:var(--bot-text);">${note}</div>`:'';
+  inner+='<div class="options-grid">';
+  items.forEach(it=>{ inner+=`<div class="card" data-key="${escapeHtml(it.k)}"><div class="title">${escapeHtml(it.t)}</div><div class="sub">${escapeHtml(it.s||'')}</div></div>`; });
+  inner+='</div>';wrapper.innerHTML=inner;chatBody.appendChild(wrapper);chatBody.scrollTop=chatBody.scrollHeight;
+  wrapper.querySelectorAll('.card').forEach(card=>{ card.addEventListener('click',()=>{ const k=card.getAttribute('data-key');onSelect(k);wrapper.querySelectorAll('.card').forEach(c=>c.style.opacity=0.5);card.style.opacity=1;card.style.borderColor='var(--accent-2)';}); });
+}
+function updateBreadcrumb() { breadcrumb.innerHTML='';const h=document.createElement('div');h.className='crumb active';h.textContent=_t('home');h.addEventListener('click',()=>resetFlow());breadcrumb.appendChild(h);FLOW.forEach(f=>{const c=document.createElement('div');c.className='crumb';c.textContent=f.label;breadcrumb.appendChild(c);}); }
+
+/* ============================ Core Flow & Startup ============================ */
+function pushFlow(s, k, l, d={}) { FLOW.push({step:s,key:k,label:l,data:d});updateBreadcrumb(); }
+openChat.addEventListener('click', ()=>{chatWindow.classList.remove('chat-hidden');resetFlow(true);});
+closeBtn.addEventListener('click', ()=>chatWindow.classList.add('chat-hidden'));
+langPills.forEach(p=>{ p.addEventListener('click', ()=>{ langPills.forEach(n=>n.classList.remove('active'));p.classList.add('active');LANG=p.getAttribute('data-lang');resetFlow();}); });
+
+function resetFlow(init=false) {
+  FLOW=[];updateBreadcrumb();clearChat();inputBox.placeholder=_t('input_placeholder');
+  addBot(`<b>${_t('welcome')}</b><div class="note">${_t('startPrompt')}</div>`);
+  addOptions(DATA[LANG].features, featureSelected, _t('main_features_label'));
+  const chips=_t('quick_chips');
+  const chipWrap=document.createElement('div');chipWrap.className='msg bot';
+  let chipHtml=`<div style="font-weight:700;margin-bottom:12px">${_t('suggestions_label')}</div><div class="chips">`;
+  chips.forEach(ch=>chipHtml+=`<div class="chip">${escapeHtml(ch)}</div>`);
+  chipWrap.innerHTML=chipHtml+'</div>';chatBody.appendChild(chipWrap);
+  chipWrap.querySelectorAll('.chip').forEach(ch=>{ ch.addEventListener('click',()=>{ inputBox.value=ch.textContent;inputBox.focus();handleSend();}); });
+  if(!init){inputBox.value='';inputBox.focus();}
+}
+
+/* ============================ Feature Flows ============================ */
+function featureSelected(key) {
+  const feat=DATA[LANG].features.find(f=>f.k===key); const label=feat?feat.t:key;
+  addUser(label); pushFlow('feature', key, label);
+  const flows={crop:startCropFlow, soil:startSoilFlow, weather:startWeatherFlow, market:startMarketFlow, schemes:startSchemesFlow, disease:startDiseaseFlow};
+  (flows[key]||(()=>addBot(_t('unknown'))))();
+}
+function addFollowUpOptions() {
+    const followUps = DATA[LANG].features.filter(f => ['weather', 'market', 'schemes'].includes(f.k));
+    addOptions(followUps, key => featureSelected(key), _t('next_steps_label'));
+}
+function startCropFlow() {
+  addBot(`<b>${_t('select_crop_prompt')}</b>`);
+  const crops=Object.keys(DATA[LANG].crops).map(k=>({k, t:k, s:DATA[LANG].crops[k].pests}));
+  addOptions(crops, selected=>{ addUser(selected);pushFlow('crop',selected,selected,{crop:selected});askSoilForCrop(selected); });
+}
+function askSoilForCrop(crop) {
+  addBot(`<b>${_t('select_soil_prompt',{crop})}</b>`);
+  const soils=Object.keys(DATA[LANG].soils).map(s=>({k:s,t:s,s:DATA[LANG].soils[s].suitable.join(', ')}));
+  addOptions(soils, soil=>{ addUser(soil);pushFlow('soil',soil,soil,{crop,soil});analyzeCropSoil(crop,soil); });
+}
+function analyzeCropSoil(crop, soil) {
+  const cropData = DATA[LANG].crops[crop]; const soilData = DATA[LANG].soils[soil];
+  if (soilData.suitable.includes(crop)) {
+    addBot(`✅ <b>${_t('suitability_ok',{crop,soil})}</b>`, `<b>${_t('notes_label')}:</b> ${cropData.nutrients}<br><b>${_t('pests_label')}:</b> ${cropData.pests}`);
+  } else {
+    addBot(`⚠️ <b>${_t('suitability_bad',{crop,soil})}</b>`, `<b>${_t('challenges_label')}:</b> ${soilData.challenges}<br><b>${_t('alternatives_label')}:</b> ${soilData.alternatives}`);
+  }
+  addFollowUpOptions();
+}
+function startSoilFlow() {
+  addBot(`<b>${_t('select_soil_details_prompt')}</b>`);
+  const soils=Object.keys(DATA[LANG].soils).map(s=>({k:s,t:s,s:DATA[LANG].soils[s].suitable.join(', ')}));
+  addOptions(soils, soil=>{ addUser(soil);const info=DATA[LANG].soils[soil];addBot(`<b>${soil}</b>`, `<b>${_t('challenges_label')}:</b> ${info.challenges}<br><b>${_t('alternatives_label')}:</b> ${info.alternatives}`);addFollowUpOptions(); });
+}
+function startMarketFlow() {
+  addBot(`<b>${_t('market_trends_prompt')}</b>`);
+  const items=Object.keys(DATA[LANG].market_trends).map(k=>({k,t:k}));
+  addOptions(items, sel=>{
+    addUser(sel); addBot(`<b>${sel}</b>: ${DATA[LANG].market_trends[sel]}`);
+    addOptions([ { k: 'forecast', t: `📈 ${_t('suggest_after_market_forecast_title')}` }, { k: 'sell', t: `💡 ${_t('suggest_after_market_sell_title')}` } ], key => { addUser(_t(`suggest_after_market_${key}_title`)); addBot(_t(`response_market_${key}`)); }, _t('next_steps_label'));
+  });
+}
+function startSchemesFlow() {
+  addBot(`<b>${_t('schemes_prompt')}</b>`);
+  const items=DATA[LANG].schemes.map(s=>({k:s.title,t:s.title,s:s.desc}));
+  addOptions(items, sel=>{
+    addUser(sel); const scheme=DATA[LANG].schemes.find(s=>s.title===sel); addBot(`<b>${scheme.title}</b>: ${scheme.desc}`);
+    addOptions([ { k: 'apply', t: `💰 ${_t('suggest_after_scheme_apply_title')}` }, { k: 'office', t: `📍 ${_t('suggest_after_scheme_office_title')}` } ], key => { addUser(_t(`suggest_after_scheme_${key}_title`)); addBot(_t(`response_scheme_${key}`)); }, _t('next_steps_label'));
+  });
+}
+function startDiseaseFlow() {
+  addBot(`<b>${_t('disease_prompt')}</b>`);
+  const items=Object.keys(DATA[LANG].diseases).map(k=>({k,t:k}));
+  addOptions(items, sel=>{
+    addUser(sel); addBot(`<b>${sel}</b>: ${DATA[LANG].diseases[sel].remedy}`);
+    addOptions([ { k: 'fert', t: `🧴 ${_t('suggest_after_disease_fert_title')}` }, { k: 'irrigation', t: `💧 ${_t('suggest_after_disease_irrigation_title')}` }, { k: 'market', t: `📈 ${_t('suggest_after_market_title')}` } ], key => {
+        if (key === 'market') { addUser(`📈 ${_t('suggest_after_market_title')}`); startMarketFlow(); }
+        else if (key === 'fert') { addUser(`🧴 ${_t('suggest_after_disease_fert_title')}`); addFollowUpOptions(); }
+        else { addUser(`💧 ${_t('suggest_after_disease_irrigation_title')}`); addBot(_t('response_disease_irrigation')); }
+    }, _t('next_steps_label'));
+  });
+}
+
+/* ============================ Weather Flow ============================ */
+function startWeatherFlow() {
+  addBot(`<b>${_t('weather_fetching')}</b>`);
+  addOptions([{k:'use_loc',t:_t('use_location')},{k:'enter_loc',t:_t('enter_location')}],act=>{
+    if(act==='use_loc'){addUser(_t('use_location'));getLocationAndWeather();}
+    else{addUser(_t('enter_location'));addBot("✍️ "+_t('enter_city_prompt'));pushFlow('await-weather','manual','Awaiting location');}
+  });
+}
+function getLocationAndWeather() {
+  if(!navigator.geolocation){addBot(`🚫 ${_t('weather_error')}`);return;}
+  addBot(`🛰️ ${_t('locating')}`);
+  navigator.geolocation.getCurrentPosition(async pos=>{ const data=await fetchWeather(pos.coords.latitude,pos.coords.longitude);if(data)showWeatherResult(data);else addBot(`🚫 ${_t('weather_error')}`);},()=>addBot(`🚫 ${_t('weather_error')}`),{enableHighAccuracy:true,timeout:10000});
+}
+async function fetchWeather(lat,lon,q=null) {
+  try { if(!OPENWEATHER_API_KEY||OPENWEATHER_API_KEY==='REPLACE_WITH_OPENWEATHER_API_KEY'){addBot("⚠️ API key not set.");return null;}
+    const url=q?`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(q)}&units=metric&appid=${OPENWEATHER_API_KEY}`:`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+    const r=await fetch(url);return r.ok?await r.json():null;
+  }catch(e){console.error(e);return null;}
+}
+function showWeatherResult(data) {
+  if(!data){addBot(`🚫 ${_t('weather_error')}`);return;}
+  const name=data.name||'Your Location',temp=Math.round(data.main.temp),cond=data.weather[0].description,hum=data.main.humidity,wind=Math.round(data.wind.speed*3.6);
+  let suggestion=_t('weather_suggestion_normal');
+  if(temp>35)suggestion=_t('weather_suggestion_hot');else if(temp<18)suggestion=_t('weather_suggestion_cool');else if((data.weather[0].main||'').toLowerCase().includes('rain'))suggestion=_t('weather_suggestion_rain');
+  addBot(`<b>📍 ${name}</b>: ${temp}°C, ${cond}.`, `💧 <b>Humidity:</b> ${hum}%<br>💨 <b>Wind:</b> ${wind} km/h<br><br><i>${suggestion}</i>`);
+  addOptions([ { k: 'weather', t: `🌱 ${_t('suggest_after_weather_title')}` }, { k: 'irrigation', t: `💧 ${_t('suggest_after_irrigation_title')}` }, { k: 'market', t: `📈 ${_t('suggest_after_market_title')}` } ], key => {
+      if (key === 'market') { addUser(`📈 ${_t('suggest_after_market_title')}`); startMarketFlow(); }
+      else if (key === 'weather') { addUser(`🌱 ${_t('suggest_after_weather_title')}`); startCropFlow(); }
+      else { addUser(`💧 ${_t('suggest_after_irrigation_title')}`); addBot(suggestion); }
+  }, _t('next_steps_label'));
+}
+
+/* ============================ Input & Navigation ============================ */
+sendBtn.addEventListener('click',handleSend);inputBox.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend();});
+async function handleSend() {
+  const txt=inputBox.value.trim();if(!txt)return;
+  inputBox.value='';suggestionsBox.style.display='none';addUser(txt);
+  const last=FLOW[FLOW.length-1];
+  if(last&&last.step==='await-weather'){ FLOW.pop();addBot(_t('weather_fetching'));const data=await fetchWeather(null,null,txt);if(data)showWeatherResult(data);else addBot(_t('weather_error'));return; }
+  addBot("🤔 "+_t('unknown'));
+}
+restartBtn.addEventListener('click',()=>resetFlow());
+document.addEventListener('keydown', e=>{if(e.key==='Escape')closeChatWindow();});
+</script>
+</body>
+</html>
